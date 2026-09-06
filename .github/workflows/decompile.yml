@@ -16,10 +16,18 @@ jobs:
           cd radare2
           sys/install.sh
 
-      - name: Install ghidra plugin
+      - name: Install build deps
         run: |
-          r2pm -U
-          r2pm -ci ghidra
+          sudo apt-get update
+          sudo apt-get install -y meson ninja-build default-jdk
+
+      - name: Build r2ghidra manually
+        run: |
+          git clone --recurse-submodules https://github.com/radareorg/r2ghidra
+          cd r2ghidra
+          meson setup build
+          ninja -C build
+          sudo ninja -C build install
 
       - name: Find so file
         id: findso
