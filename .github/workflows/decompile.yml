@@ -1,0 +1,38 @@
+name: Decompile SO
+
+on:
+  workflow_dispatch:
+
+jobs:
+  decompile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install radare2
+        run: |
+          git clone --depth 1 https://github.com/radareorg/radare2
+          cd radare2
+          sys/install.sh
+
+      - name: Install ghidra plugin
+        run: |
+          r2pm -U
+          r2pm -ci ghidra
+
+      - name: Find so file
+        id: findso
+        run: |
+          SOFILE=$(find . -name "*.so" | head -n 1)
+          echo "sofile=$SOFILE" >> $GITHUB_OUTPUT
+
+      - name: Decompile
+        run: |
+          r2 -q -c "e asm.arch=arm; e asm.bits=32; aaaa; pdg @@f > all_pseudocode.c" "${{ steps.findso.outputs.sofile }}"
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: pseudocode
+          path: all_pseudocode.c
